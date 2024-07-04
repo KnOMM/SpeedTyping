@@ -21,6 +21,7 @@ public class Main {
         terminal.putCharacter('\n');
         terminal.flush();
 
+
         TerminalPosition startPosition = terminal.getCursorPosition();
         terminal.setCursorPosition(startPosition.withRelativeColumn(3).withRelativeRow(2));
         terminal.flush();
