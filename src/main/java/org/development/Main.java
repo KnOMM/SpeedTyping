@@ -2,9 +2,14 @@ package org.development;
 
 import com.googlecode.lanterna.SGR;
 import com.googlecode.lanterna.TerminalPosition;
+import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.TextColor;
+import com.googlecode.lanterna.graphics.TextGraphics;
+import com.googlecode.lanterna.input.KeyStroke;
+import com.googlecode.lanterna.input.KeyType;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
+import com.googlecode.lanterna.terminal.TerminalResizeListener;
 
 import java.io.IOException;
 
@@ -13,6 +18,48 @@ public class Main {
         System.out.println("Hello world!");
         DefaultTerminalFactory defaultTerminalFactory = new DefaultTerminalFactory();
         Terminal terminal = defaultTerminalFactory.createTerminal();
+        terminal.enterPrivateMode();
+        terminal.setCursorPosition(0, 0);
+        terminal.setCursorVisible(false);
+        final TextGraphics textGraphics = terminal.newTextGraphics();
+        textGraphics.setForegroundColor(TextColor.ANSI.RED);
+        textGraphics.setBackgroundColor(TextColor.ANSI.GREEN);
+
+        textGraphics.putString(2, 1, "Lanterna Tutorial 2 - Press ESC to exit", SGR.BOLD);
+        textGraphics.setForegroundColor(TextColor.ANSI.DEFAULT);
+        textGraphics.setBackgroundColor(TextColor.ANSI.DEFAULT);
+        textGraphics.putString(5, 3, "Terminal Size: ", SGR.BOLD);
+        textGraphics.putString(5 + "Terminal Size: ".length(), 3, terminal.getTerminalSize().toString());
+
+        terminal.flush();
+        Thread.sleep(2000);
+
+
+        terminal.addResizeListener(new TerminalResizeListener() {
+            @Override
+            public void onResized(Terminal terminal, TerminalSize newSize) {
+                // Be careful here though, this is likely running on a separate thread. Lanterna is threadsafe in
+                // a best-effort way so while it shouldn't blow up if you call terminal methods on multiple threads,
+                // it might have unexpected behavior if you don't do any external synchronization
+                textGraphics.drawLine(5, 3, newSize.getColumns() - 10, 3, ' ');
+                textGraphics.putString(5, 3, "Terminal Size: ", SGR.BOLD);
+                textGraphics.putString(5 + "Terminal Size: ".length(), 3, newSize.toString());
+                try {
+                    terminal.flush();
+                } catch (IOException e) {
+                    // Not much we can do here
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+
+        Thread.sleep(2000);
+
+
+        textGraphics.putString(5, 4, "Last Keystroke: ", SGR.BOLD);
+        textGraphics.putString(5 + "Last Keystroke: ".length(), 4, "<Pending>");
+        terminal.flush();
+
         terminal.putCharacter('H');
         terminal.putCharacter('e');
         terminal.putCharacter('l');
@@ -83,5 +130,17 @@ public class Main {
         terminal.bell();
         terminal.flush();
         Thread.sleep(200);
+
+        KeyStroke keyStroke = terminal.pollInput();
+        while (keyStroke.getKeyType() != KeyType.Escape) {
+            textGraphics.drawLine(5, 10, terminal.getTerminalSize().getColumns() - 1, 10, ' ');
+            textGraphics.putString(5, 10, "Last Keystroke: ", SGR.BOLD);
+            textGraphics.putString(5 + "Last Keystroke: ".length(), 10, keyStroke.toString());
+            terminal.flush();
+//            Thread.sleep(1000);
+            keyStroke = terminal.readInput();
+        }
+
+//        terminal.exitPrivateMode();
     }
 }
