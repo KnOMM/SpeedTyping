@@ -1,4 +1,4 @@
-package org.development;
+package org.development.tests;
 
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.gui2.*;

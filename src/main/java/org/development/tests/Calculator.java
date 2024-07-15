@@ -1,9 +1,12 @@
-package org.development;
+package org.development.tests;
 
 
 import com.googlecode.lanterna.*;
 import com.googlecode.lanterna.graphics.ThemeDefinition;
 import com.googlecode.lanterna.gui2.*;
+import com.googlecode.lanterna.gui2.menu.MenuBar;
+import com.googlecode.lanterna.input.KeyStroke;
+import com.googlecode.lanterna.input.KeyType;
 import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
@@ -11,7 +14,7 @@ import com.googlecode.lanterna.terminal.Terminal;
 
 
 import java.io.IOException;
-import java.util.Random;
+import java.util.*;
 import java.util.regex.Pattern;
 
 public class Calculator {
@@ -21,7 +24,6 @@ public class Calculator {
         Terminal terminal = new DefaultTerminalFactory().createTerminal();
         Screen screen = new TerminalScreen(terminal);
         screen.startScreen();
-
 
 //        SeparateTextGUIThread
 
@@ -43,7 +45,6 @@ public class Calculator {
         operations.addItem("Subtract");
         panel.addComponent(operations);
 
-
         panel.addComponent(new EmptySpace(new TerminalSize(0, 0)));
         new Button("Calculate!", new Runnable() {
             @Override
@@ -57,58 +58,57 @@ public class Calculator {
                 }
             }
         }).addTo(panel);
-
+//
         panel.addComponent(new EmptySpace(new TerminalSize(0, 0)));
         panel.addComponent(lblOutput);
-
-        // Create window to hold the panel
+//
+//         Create window to hold the panel
         BasicWindow window = new BasicWindow();
+//        CustomWindow window = new CustomWindow()
         window.setComponent(panel);
 
 
+        CustomBackground background = new CustomBackground();
         // Create gui and start gui
-        MultiWindowTextGUI gui = new MultiWindowTextGUI(new SeparateTextGUIThread.Factory(), screen, new DefaultWindowManager(), null, new CustomBackground());
-//        MultiWindowTextGUI gui = new MultiWindowTextGUI(screen, new DefaultWindowManager(), new EmptySpace(TextColor.ANSI.BLUE));
+        MultiWindowTextGUI gui = new MultiWindowTextGUI(new SeparateTextGUIThread.Factory(), screen, new DefaultWindowManager(), null, background);
         TextGUIThread guiThread = gui.getGUIThread();
         try {
-//        guiThread = gui.getGUIThread();
+            ((AsynchronousTextGUIThread) guiThread).start();
 
-//        guiThread.processEventsAndUpdate();
+            // Start the background update thread
+            long timeLong = System.currentTimeMillis();
 
+//            window.setHints(new ArrayList<>((Collection) Window.Hint.NO_POST_RENDERING));
+            gui.addWindow(window);
+            new Thread(() -> {
+                while (true) {
+                    guiThread.invokeLater(() -> {
+//                        try {
+//                            gui.updateScreen();
+//                        } catch (IOException e) {
+//                            throw new RuntimeException(e);
+//                        }
 
-        ((AsynchronousTextGUIThread) guiThread).start();
-//        guiThread.processEventsAndUpdate();
-
-        // Start the background update thread
-//        window.getBounds().getRows();
-//        window.getBounds().getColumns();
-        new Thread(() -> {
-            while (true) {
-                guiThread.invokeLater(() -> {
-//                    updateBackground(screen, window.getPosition(), window.getBounds());
-                    window.invalidate(); // Force the window to redraw itself
+//                        System.out.println(gui.isPendingUpdate());
+                        window.invalidate(); // Force the window to redraw itself
+                        try {
+                            guiThread.processEventsAndUpdate(); // Process any pending events and update the GUI
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
                     try {
-                        guiThread.processEventsAndUpdate(); // Process any pending events and update the GUI
-                    } catch (IOException e) {
+                        Thread.yield();
+                        Thread.sleep(2000);
+                    } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
-                });
-                try {
-                    Thread.yield();
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
                 }
-            }
-        }).start();
-
-        gui.addWindow(window);
+            }).start();
+        } finally {
         }
-        finally {
-//       ((AsynchronousTextGUIThread) guiThread).stop();
-        }
-
     }
+
 
     static class CustomBackground extends GUIBackdrop {
 
@@ -116,7 +116,13 @@ public class Calculator {
         @Override
         protected ComponentRenderer<EmptySpace> createDefaultRenderer() {
 
+
+            boolean redrawRequired = true;
+
+
             return new ComponentRenderer<EmptySpace>() {
+                //                componentRenderer = this;
+
 
                 @Override
                 public TerminalSize getPreferredSize(EmptySpace component) {
@@ -125,55 +131,18 @@ public class Calculator {
 
                 @Override
                 public void drawComponent(TextGUIGraphics graphics, EmptySpace component) {
-                    ThemeDefinition themeDefinition = component.getTheme().getDefinition(GUIBackdrop.class);
-                    graphics.applyThemeStyle(themeDefinition.getNormal());
-                    graphics.fill(themeDefinition.getCharacter("BACKGROUND", ' '));
-
-//                    new Runnable() {
-//
-//                        @Override
-//                        public void run() {
-//                            while(true) {
-
                     TerminalSize terminalSize = graphics.getTextGUI().getScreen().getTerminalSize();
                     Random random = new Random();
 
                     for (int c = 0; c < terminalSize.getColumns(); c++) {
                         for (int r = 0; r < terminalSize.getRows(); r++) {
-                            graphics.setCharacter(c, r, new TextCharacter(' ', TextColor.ANSI.DEFAULT,
-                                    TextColor.ANSI.values()[random.nextInt(TextColor.ANSI.values().length)]));
+                            TextCharacter character = new TextCharacter(' ', TextColor.ANSI.DEFAULT,
+                                    TextColor.ANSI.values()[random.nextInt(TextColor.ANSI.values().length)]);
+                            graphics.setCharacter(c, r, character);
                         }
                     }
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                    Thread.yield();
                 }
-//                        }
             };
-
-//                }
-//            };
-
-        }
-    }
-
-
-    private static void updateBackground(Screen screen, TerminalPosition terminalPosition, TerminalRectangle windowSize) {
-        TerminalSize terminalSize = screen.getTerminalSize();
-        Random random = new Random();
-        for (int c = 0; c < terminalSize.getColumns(); c++) {
-            for (int r = 0; r < terminalSize.getRows(); r++) {
-                if (c >= terminalPosition.getColumn() && c < terminalPosition.getColumn() + windowSize.getColumns() && r >= terminalPosition.getRow() && r < terminalPosition.getRow() + windowSize.getRows()) {
-                    continue;
-                }
-
-//                screen.setCharacter(c, r, new TextCharacter(' ', TextColor.ANSI.DEFAULT,
-//                        TextColor.ANSI.values()[random.nextInt(TextColor.ANSI.values().length)]));
-
-            }
         }
     }
 }
