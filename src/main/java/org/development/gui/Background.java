@@ -22,7 +22,10 @@ public class Background extends GUIBackdrop {
 
             @Override
             public void drawComponent(TextGUIGraphics graphics, EmptySpace component) {
-                TerminalSize terminalSize = graphics.getTextGUI().getScreen().getTerminalSize();
+                TerminalSize terminalSize = graphics.getSize();
+//                        .getTextGUI()
+//                        .getScreen().getTerminalSize();
+
                 Random random = new Random();
 
                 for (int c = 0; c < terminalSize.getColumns(); c++) {

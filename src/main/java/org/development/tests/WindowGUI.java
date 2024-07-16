@@ -247,7 +247,7 @@ public class WindowGUI {
                     ThemeDefinition themeDefinition = component.getTheme().getDefinition(GUIBackdrop.class);
 //                    graphics.fill(themeDefinition.getCharacter("BACKGROUND", ' '));
 
-                    TerminalSize terminalSize = graphics.getTextGUI().getScreen().getTerminalSize();
+                    TerminalSize terminalSize = graphics.getSize();
                     Random random = new Random();
 
                     for (int c = 0; c < terminalSize.getColumns(); c++) {

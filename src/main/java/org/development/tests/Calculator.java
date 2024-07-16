@@ -91,11 +91,11 @@ public class Calculator {
 
 //                        System.out.println(gui.isPendingUpdate());
                         window.invalidate(); // Force the window to redraw itself
-                        try {
-                            guiThread.processEventsAndUpdate(); // Process any pending events and update the GUI
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
+//                        try {
+//                            guiThread.processEventsAndUpdate(); // Process any pending events and update the GUI
+//                        } catch (IOException e) {
+//                            throw new RuntimeException(e);
+//                        }
                     });
                     try {
                         Thread.yield();
