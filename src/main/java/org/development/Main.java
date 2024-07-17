@@ -13,10 +13,11 @@ import org.development.gui.MainDisplay;
 
 import javax.swing.*;
 import java.io.IOException;
-import java.util.EnumSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Stack;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalTime;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
     static MultiWindowTextGUI gui;
@@ -64,34 +65,10 @@ public class Main {
                 window.setVisible(false);
                 Window secondaryWindow = new BasicWindow();
 
-                // Clear the screen for the secondary window
-                //                    Screen newScreen = terminalFactory.createScreen();
-//                    newScreen.startScreen();
-//                    newScreen.clear();
-//                    screen.setCharacter(1, 1, new TextCharacter('!'));
-//                    TextCharacter backCharacter = screen.getBackCharacter(1, 1);
-//                    System.out.println(backCharacter);
-//                    screen.refresh();
-//                    TextCharacter backCharacter1 = screen.getBackCharacter(1, 1);
-//                    System.out.println("back2: " + backCharacter1);
-
                 // Create a new GUI for the secondary window
                 MultiWindowTextGUI secondaryGui = new MultiWindowTextGUI(screen);
 
                 secondaryWindow.setComponent(new Button("Exit", secondaryWindow::close));
-//                    secondaryGui.addWindow(secondaryWindow);
-
-                // Create a thread to wait for 1 second and close the secondary window
-//                    new Thread(() -> {
-//                        try {
-//                            Thread.sleep(1000);
-//                            secondaryWindow.close();
-////                            newScreen.stopScreen();
-//                        } catch (InterruptedException e) {
-//                            e.printStackTrace();
-//                        }
-//                    }).start();
-
                 secondaryGui.addWindowAndWait(secondaryWindow);
                 window.setVisible(true);
             }
@@ -106,9 +83,12 @@ public class Main {
                     screen.clear();
 
                     screen.newTextGraphics().putString(10, 5, TEXT);
+                    screen.newTextGraphics().putString(10, 10, TEXT);
+                    screen.setCursorPosition(new TerminalPosition(10, 10));
                     screen.refresh();
 
-                    while (true) {
+                    long timeStart = System.currentTimeMillis();
+                    while (input.size() < TEXT.length()) {
                         KeyStroke keyStroke = screen.readInput();
 
                         if (keyStroke.getKeyType() == KeyType.Escape || keyStroke.getKeyType() == KeyType.EOF) {
@@ -126,22 +106,56 @@ public class Main {
                             input.push(ch);
 
 //                            input += ch;
-                            screen.setCursorPosition(new TerminalPosition(9+input.size(), 6));
+                            screen.setCursorPosition(new TerminalPosition(9 + input.size() + 1, 10));
                             screen.setCharacter(9 + input.size(), 6, input.peek());
                             screen.refresh();
+
+//                            TextCharacter cur = input.peek();
+//                            cur.withBackgroundColor(cur.getForegroundColor()).withForegroundColor(TextColor.ANSI.DEFAULT);
+//                            cur.withCharacter(TEXT.charAt(input.size()));
+                            TextCharacter cur2 = new TextCharacter(TEXT.charAt(input.size() - 1), TextColor.ANSI.BLACK, input.peek().getForegroundColor());
+//                            cur2.withBackgroundColor(input.peek().getForegroundColor());
+                            screen.setCharacter(9 + input.size(), 10, cur2);
                         }
-                        if (keyStroke.getKeyType() == KeyType.Backspace) {
+                        if (keyStroke.getKeyType() == KeyType.Backspace && !input.isEmpty()) {
                             TextCharacter blank = new TextCharacter(' ', null, TextColor.ANSI.DEFAULT);
                             screen.setCharacter(9 + input.size(), 6, blank);
-                            screen.setCursorPosition(new TerminalPosition(9+input.size(), 6));
+                            screen.setCursorPosition(new TerminalPosition(9 + input.size(), 10));
+
+                            TextCharacter cur = new TextCharacter(TEXT.charAt(input.size() - 1));
+                            screen.setCharacter(9 + input.size(), 10, cur);
                             input.pop();
                         }
 
                         screen.refresh();
                     }
+                    long elapsedTimeMillis = System.currentTimeMillis() - timeStart;
+                    // Convert elapsed time to HH:mm:ss format   timeInstant.use
+                    long hours = TimeUnit.MILLISECONDS.toHours(elapsedTimeMillis);
+                    screen.clear();
+                    long minutes = TimeUnit.MILLISECONDS.toMinutes(elapsedTimeMillis) % 60;
+                    long seconds = TimeUnit.MILLISECONDS.toSeconds(elapsedTimeMillis) % 60;
+                    long milliseconds = elapsedTimeMillis % 1000;
+//                    TimeUnit.MILLISECONDS.
+                    // Format elapsed time as a string screen.refresh();
+                    String elapsedTimeFormatted = String.format("%02d:%02d:%02d:%03d", hours, minutes, seconds, milliseconds);
+
+                    screen.newTextGraphics().putString(10, 10, elapsedTimeFormatted);
+
+                    double myTimeMinutes = elapsedTimeMillis / 1000.0 / 60;
+                    screen.newTextGraphics().putString(10, 11, "Chars/minute: " + (countCharacters(TEXT)/myTimeMinutes));
+                    screen.newTextGraphics().putString(10, 12, "Words/minute: " + (countWords(
+                            TEXT) / myTimeMinutes));
+                    screen.refresh();
+                    Thread.sleep(10000);
+
+
+                    input = new Stack<>();
                     window.setVisible(true);
 
                 } catch (IOException e) {
+                    throw new RuntimeException(e);
+                } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             }
@@ -157,5 +171,13 @@ public class Main {
 
 
         gui.addWindowAndWait(window);
+    }
+
+    public static int countCharacters(String string) {
+        return string == null ? 0 : string.length();
+    }
+
+    public static int countWords(String string) {
+        return string.trim().split("\\s+").length;
     }
 }
