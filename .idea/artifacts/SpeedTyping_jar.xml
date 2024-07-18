@@ -1,0 +1,10 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="SpeedTyping:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/SpeedTyping_jar</output-path>
+    <root id="archive" name="SpeedTyping.jar">
+      <element id="module-output" name="SpeedTyping" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/googlecode/lanterna/lanterna/3.1.2/lanterna-3.1.2.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/hsqldb/hsqldb/2.7.2/hsqldb-2.7.2.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>
