@@ -14,19 +14,26 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Stack;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class SpeedType implements Runnable {
     private Window window;
     private static Screen screen;
     private String text;
-    private int columnStart;
+    private static int columnStart;
     private int column;
-    private int row;
+    private static int row = 5;
     public static int offset;
-    static Stack<TextCharacter> input;
+    static List<Stack<TextCharacter>> input;
+    private int length;
+
+    // color codes for characters
+    TextColor right = TextColor.ANSI.GREEN;
+    TextColor wrong = TextColor.ANSI.RED;
+    TextColor textBGDefault = TextColor.ANSI.DEFAULT;
+    TextColor textFGTyped = TextColor.ANSI.BLUE;
+    TextColor textFGDefault = TextColor.ANSI.WHITE;
 
     SpeedType(Window window, Screen screen, String text) {
         this.window = window;
@@ -35,7 +42,7 @@ public class SpeedType implements Runnable {
         column = 10;
         columnStart = 10;
         offset = 0;
-        input = new Stack<>();
+        input = new ArrayList<>();
     }
 
     @Override
@@ -43,6 +50,8 @@ public class SpeedType implements Runnable {
         try {
             window.setVisible(false);
             screen.clear();
+
+            input.add(new Stack<>());
 
             // TODO clear this
             text = "";
@@ -55,105 +64,78 @@ public class SpeedType implements Runnable {
                 }
             }
             String[] lines = text.trim().split("\n");
+            List<String> linesList = Arrays.asList(lines);
+            Collections.shuffle(linesList);
+            lines = linesList.stream().map(String::trim).toArray(String[]::new);
 
             // starting update thread
             ScreenUpdate screenUpdate = new ScreenUpdate(screen, lines);
             Thread screenUpdateThread = new Thread(screenUpdate);
             screenUpdateThread.start();
             // draw lines
-            drawLines(offset, lines);
+//            drawLines(offset, lines);
 
 //            screen.setCursorPosition(new TerminalPosition(column, 0));
             screen.refresh();
+            System.out.println(Arrays.toString(lines));
 
             long timeStart = System.currentTimeMillis();
 
+
+            // current stack
+            Stack<TextCharacter> stackLine = input.get(offset);
             while (true) {
                 KeyStroke keyStroke = screen.readInput();
                 if (keyStroke.getKeyType() == KeyType.Escape) {
                     screenUpdate.terminate();
                     break;
                 }
-                if (keyStroke.getKeyType() == KeyType.Enter) {
-                    offset++;
-                    drawLines(offset, lines);
-                }
-                if (column == columnStart && keyStroke.getKeyType() == KeyType.Backspace && offset > 0) {
-                    offset--;
-                }
 
-                if (keyStroke.getKeyType() == KeyType.Character) {
-                    Character character = keyStroke.getCharacter();
-                    TextCharacter textCharacter;
-                    if (character == lines[offset].charAt(input.size())) {
-                        textCharacter = new TextCharacter(character, TextColor.ANSI.BLUE, TextColor.ANSI.GREEN);
+                if (keyStroke.getKeyType() == KeyType.Character && stackLine.size() < lines[offset].length()) {
+
+                    Character character = lines[offset].charAt(stackLine.size());
+                    TextCharacter textCharacter = new TextCharacter(character);
+                    textCharacter = textCharacter.withForegroundColor(textFGTyped);
+                    if (keyStroke.getCharacter() == character) {
+                        textCharacter = textCharacter.withBackgroundColor(right);
                     } else {
-                        textCharacter = new TextCharacter(lines[offset].charAt(input.size()), TextColor.ANSI.BLUE, TextColor.ANSI.RED);
+                        textCharacter = textCharacter.withBackgroundColor(wrong);
                     }
-
-                    input.push(textCharacter);
-                    screen.setCharacter(column++, offset, textCharacter);
+                    stackLine.push(textCharacter);
+                } else if (keyStroke.getKeyType() == KeyType.Backspace && !stackLine.isEmpty()) {
+                    TextCharacter poppedChar = stackLine.pop();
+                    poppedChar = poppedChar.withBackgroundColor(textBGDefault).withForegroundColor(textFGDefault);
+                    screen.setCharacter(columnStart + stackLine.size(), row, poppedChar);
+                } else if (keyStroke.getKeyType() == KeyType.Enter && stackLine.size() == lines[offset].length()) {
+                    stackLine = new Stack<>();
+                    input.add(stackLine);
+                    offset++;
+                    screen.clear();
+                    drawDrawn();
+                    drawLines(offset, lines);
+                } else if (keyStroke.getKeyType() == KeyType.Backspace && stackLine.isEmpty() && !input.isEmpty() && offset > 0) {
+                    input.remove(input.size() - 1);
+                    screen.clear();
+                    drawDrawn();
+                    drawLines(--offset, lines);
+                    stackLine = input.get(offset);
                 }
 
 
+                if (!stackLine.isEmpty()) {
+                    screen.setCharacter(columnStart + stackLine.size() - 1, row, stackLine.peek());
+                }
+                screen.setCursorPosition(new TerminalPosition(columnStart + stackLine.size(), row));
                 screen.refresh();
             }
 
-
-//            while (input.size() < text.length()) {
-//                KeyStroke keyStroke = screen.readInput();
-//
-//                if (keyStroke.getKeyType() == KeyType.Escape || keyStroke.getKeyType() == KeyType.EOF) {
-//                    break;
-//                }
-//
-//                if (keyStroke.getKeyType() == KeyType.Enter) {
-////                    screen.scrollLines(1);
-//                    System.out.println("in");
-//                    // TODO redraw(lineStart, line End)
-//                }
-//                if (keyStroke.getKeyType() == KeyType.Character) {
-//                    TextCharacter ch;
-//                    if (text.charAt(input.size()) == keyStroke.getCharacter()) {
-//                        ch = new TextCharacter(keyStroke.getCharacter(), TextColor.ANSI.GREEN, TextColor.ANSI.DEFAULT);
-//                    } else {
-//                        ch = new TextCharacter(keyStroke.getCharacter(), TextColor.ANSI.RED, TextColor.ANSI.DEFAULT);
-//                    }
-//
-//                    input.push(ch);
-//
-////                            input += ch;
-//                    screen.setCursorPosition(new TerminalPosition(9 + input.size() + 1, 5));
-//                    screen.setCharacter(9 + input.size(), 5, input.peek());
-//                    screen.refresh();
-//
-////                            TextCharacter cur = input.peek();
-////                            cur.withBackgroundColor(cur.getForegroundColor()).withForegroundColor(TextColor.ANSI.DEFAULT);
-////                            cur.withCharacter(text.charAt(input.size()));
-//                    TextCharacter cur2 = new TextCharacter(text.charAt(input.size() - 1), TextColor.ANSI.BLACK, input.peek().getForegroundColor());
-////                            cur2.withBackgroundColor(input.peek().getForegroundColor());
-//                    screen.setCharacter(9 + input.size(), 5, cur2);
-//                }
-//                if (keyStroke.getKeyType() == KeyType.Backspace && !input.isEmpty()) {
-//                    TextCharacter blank = new TextCharacter(' ', null, TextColor.ANSI.DEFAULT);
-//                    screen.setCharacter(9 + input.size(), 6, blank);
-//                    screen.setCursorPosition(new TerminalPosition(9 + input.size(), 5));
-//
-//                    TextCharacter cur = new TextCharacter(text.charAt(input.size() - 1));
-//                    screen.setCharacter(9 + input.size(), 5, cur);
-//                    input.pop();
-//                }
-//
-//                screen.refresh();
-//            }
+            // show statistics
             long elapsedTimeMillis = System.currentTimeMillis() - timeStart;
             statistics(elapsedTimeMillis);
             screen.refresh();
 
             Thread.sleep(1000);
 
-
-//            input = new Stack<>();
             screenUpdate.terminate();
             window.setVisible(true);
 
@@ -173,9 +155,44 @@ public class SpeedType implements Runnable {
     }
 
 
+    public static void drawDrawn() {
+        if (input.isEmpty()) return;
+
+        int start, end;
+        int toDraw = input.size() - 1;
+
+        if (toDraw > row) {
+            start = toDraw - row;
+            end = toDraw;
+            for (int i = start; i < end; i++) {
+                List<TextCharacter> list = new ArrayList<>(input.get(i));
+                for (int j = 0; j < list.size(); j++) {
+                    screen.setCharacter(columnStart + j, i - start, list.get(j));
+                }
+            }
+        } else {
+            start = 0;
+            int dif = toDraw - start;
+            for (int i = start; i < toDraw; i++) {
+                List<TextCharacter> list = new ArrayList<>(input.get(i));
+                for (int j = 0; j < list.size(); j++) {
+                    screen.setCharacter(columnStart + j, i - start + row - dif
+                            , list.get(j));
+                }
+            }
+        }
+    }
+
     public static void drawLines(int offset, String[] lines) {
+        Stack<TextCharacter> originalStack = input.get(offset);
+        List<TextCharacter> list = new ArrayList<>(originalStack);
+
+
         for (int i = offset; i < lines.length; i++) {
-            screen.newTextGraphics().putString(10, i - offset, lines[i].trim());
+            screen.newTextGraphics().putString(columnStart, row + i - offset, lines[i].trim());
+        }
+        for (int i = 0; i < list.size(); i++) {
+            screen.setCharacter(columnStart + i, row, list.get(i));
         }
     }
 
@@ -186,7 +203,6 @@ public class SpeedType implements Runnable {
         long minutes = TimeUnit.MILLISECONDS.toMinutes(elapsedTimeMillis) % 60;
         long seconds = TimeUnit.MILLISECONDS.toSeconds(elapsedTimeMillis) % 60;
         long milliseconds = elapsedTimeMillis % 1000;
-//                    TimeUnit.MILLISECONDS.
         // Format elapsed time as a string screen.refresh();
         String elapsedTimeFormatted = String.format("%02d:%02d:%02d:%03d", hours, minutes, seconds, milliseconds);
 

@@ -23,17 +23,21 @@ public class ScreenUpdate implements Runnable {
     @Override
     public void run() {
         try {
+
+            screen.clear();
+            SpeedType.drawDrawn();
+            SpeedType.drawLines(SpeedType.offset, lines);
+            screen.refresh();
+
             while (isOn) {
 
                 TerminalSize terminalSize = screen.doResizeIfNecessary();
                 if (terminalSize != null) {
                     screen.clear();
+                    SpeedType.drawDrawn();
                     SpeedType.drawLines(SpeedType.offset, lines);
+                    screen.refresh();
                 }
-
-
-                screen.refresh();
-
 
                 Thread.sleep(100);
             }
