@@ -25,7 +25,7 @@ public class ScreenUpdate implements Runnable {
         try {
 
             screen.clear();
-            SpeedType.drawDrawn();
+            SpeedType.drawTyped();
             SpeedType.drawLines(SpeedType.offset, lines);
             screen.refresh();
 
@@ -34,7 +34,7 @@ public class ScreenUpdate implements Runnable {
                 TerminalSize terminalSize = screen.doResizeIfNecessary();
                 if (terminalSize != null) {
                     screen.clear();
-                    SpeedType.drawDrawn();
+                    SpeedType.drawTyped();
                     SpeedType.drawLines(SpeedType.offset, lines);
                     screen.refresh();
                 }

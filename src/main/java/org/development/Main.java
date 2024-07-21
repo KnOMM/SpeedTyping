@@ -9,15 +9,32 @@ import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import org.development.gui.Background;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class Main {
     static MultiWindowTextGUI gui;
     static boolean isOn = true;
-    final static String TEXT = "some text to be typed using different characters1234314! {} [] []: '";
+    public static Connection connection;
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, SQLException {
+
+        try {
+            String db = "jdbc:hsqldb:file:database/DB";
+            String user = "SA";
+            String password = "password";
+            connection = DriverManager.getConnection(db, user, password);
+            if (connection == null) {
+                System.out.println("Problem with creating connection");
+                System.exit(-1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace(System.out);
+        }
 
         DefaultTerminalFactory terminalFactory = new DefaultTerminalFactory();
         Screen screen = terminalFactory.createScreen();
@@ -47,12 +64,15 @@ public class Main {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        LogIn login = new LogIn(window, screen, connection);
+        LogOut logOut = new LogOut(window, screen, connection);
+
         Panel menu = new Panel(new LinearLayout(Direction.VERTICAL));
         menu.addComponent(new Label("test label"));
         menu.addComponent(new Label("test label2"));
-        menu.addComponent(new Button("Log In", new LogIn(window, screen)));
-        menu.addComponent(new Button("Register", new LogIn(window, screen)));
-        menu.addComponent(new Button("type test", new SpeedType(window, screen, TEXT)));
+        menu.addComponent(new Button("Log In", login));
+        menu.addComponent(new Button("Log Out", logOut));
+        menu.addComponent(new Button("type test", new SpeedType(window, screen)));
         menu.addComponent(new Button("Exit", () -> {
             window.close();
             ((AsynchronousTextGUIThread) guiThread).stop();
@@ -61,5 +81,6 @@ public class Main {
 
         window.setComponent(menu);
         gui.addWindowAndWait(window);
+        connection.close();
     }
 }

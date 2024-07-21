@@ -18,29 +18,33 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class SpeedType implements Runnable {
-    private Window window;
+    private final Window window;
     private static Screen screen;
     private String text;
     private static int columnStart;
-    private int column;
-    private static int row = 5;
+    private static int row;
     public static int offset;
     static List<Stack<TextCharacter>> input;
     private int length;
 
     // color codes for characters
-    TextColor right = TextColor.ANSI.GREEN;
-    TextColor wrong = TextColor.ANSI.RED;
-    TextColor textBGDefault = TextColor.ANSI.DEFAULT;
-    TextColor textFGTyped = TextColor.ANSI.BLUE;
-    TextColor textFGDefault = TextColor.ANSI.WHITE;
+    private static final TextColor right = TextColor.ANSI.GREEN;
+    private static final TextColor wrong = TextColor.ANSI.RED;
+    private static final TextColor textBGDefault = TextColor.ANSI.DEFAULT;
+    private static final TextColor textFGTyped = TextColor.ANSI.BLUE;
+    private static final TextColor textFGDefault = TextColor.ANSI.WHITE;
 
-    SpeedType(Window window, Screen screen, String text) {
+    // statistic results
+    private static int charsTotal;
+    private static int wordsTotal;
+    private static int incorrectTotal;
+
+    SpeedType(Window window, Screen screen) {
         this.window = window;
         SpeedType.screen = screen;
-        this.text = text;
-        column = 10;
         columnStart = 10;
+//        int column = columnStart;
+        row = 5;
         offset = 0;
         input = new ArrayList<>();
     }
@@ -111,12 +115,12 @@ public class SpeedType implements Runnable {
                     input.add(stackLine);
                     offset++;
                     screen.clear();
-                    drawDrawn();
+                    drawTyped();
                     drawLines(offset, lines);
                 } else if (keyStroke.getKeyType() == KeyType.Backspace && stackLine.isEmpty() && !input.isEmpty() && offset > 0) {
                     input.remove(input.size() - 1);
                     screen.clear();
-                    drawDrawn();
+                    drawTyped();
                     drawLines(--offset, lines);
                     stackLine = input.get(offset);
                 }
@@ -132,30 +136,50 @@ public class SpeedType implements Runnable {
             // show statistics
             long elapsedTimeMillis = System.currentTimeMillis() - timeStart;
             statistics(elapsedTimeMillis);
+
+            // nulify counters
+            input = new ArrayList<>();
+            incorrectTotal = 0;
+            wordsTotal = 0;
+            charsTotal = 0;
             screen.refresh();
 
-            Thread.sleep(1000);
+            Thread.sleep(3000);
 
             screenUpdate.terminate();
             window.setVisible(true);
 
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static int countCharacters(String string) {
-        return string == null ? 0 : string.length();
+    public static void countStatistics() {
+
+        int words = 0;
+        int chars = 0;
+        int incorrect = 0;
+        for (Stack<TextCharacter> textCharacters : input) {
+            List<TextCharacter> lineList = new ArrayList<>(textCharacters);
+            String line = "";
+            for (int j = 0; j < lineList.size(); j++) {
+                chars++;
+                if (lineList.get(j).getBackgroundColor() == wrong) {
+                    incorrect++;
+                }
+                line += lineList.get(j).getCharacterString();
+            }
+            // split if blank, ",", ".", "<", or "("
+            words += line.split("\\s|,|\\.|<|\\(").length;
+        }
+
+        charsTotal = chars;
+        wordsTotal = words;
+        incorrectTotal = incorrect;
     }
 
-    public static int countWords(String string) {
-        return string.trim().split("\\s+").length;
-    }
 
-
-    public static void drawDrawn() {
+    public static void drawTyped() {
         if (input.isEmpty()) return;
 
         int start, end;
@@ -207,10 +231,17 @@ public class SpeedType implements Runnable {
         String elapsedTimeFormatted = String.format("%02d:%02d:%02d:%03d", hours, minutes, seconds, milliseconds);
 
         screen.newTextGraphics().putString(10, 10, elapsedTimeFormatted);
-
         double myTimeMinutes = elapsedTimeMillis / 1000.0 / 60;
-        screen.newTextGraphics().putString(10, 11, "Chars/minute: " + (countCharacters(text) / myTimeMinutes));
-        screen.newTextGraphics().putString(10, 12, "Words/minute: " + (countWords(
-                text) / myTimeMinutes));
+
+        countStatistics();
+        int chars = charsTotal;
+        int words = wordsTotal;
+        double wrong = incorrectTotal * 1.0 / charsTotal;
+        System.out.println(chars);
+        System.out.println(words);
+        System.out.println(1 - wrong);
+        screen.newTextGraphics().putString(10, 11, "Chars/minute: " + (chars / myTimeMinutes));
+        screen.newTextGraphics().putString(10, 12, "Words/minute: " + (words / myTimeMinutes));
+        screen.newTextGraphics().putString(10, 13, "Accuracy: " + String.format("%.2f", (1 - wrong) * 100) + "%");
     }
 }
