@@ -21,9 +21,11 @@ CREATE TABLE IF NOT EXISTS TestUsers
 CREATE TABLE IF NOT EXISTS TestStatistics
 (
     id              UUID PRIMARY KEY,
-    total_chars     INT NOT NULL,
-    total_words     INT NOT NULL,
-    incorrect_chars INT NOT NULL
+    total_chars     INT    NOT NULL,
+    total_words     INT    NOT NULL,
+    incorrect_chars INT    NOT NULL,
+    time            BIGINT NOT NULL,
+    char_minute     INT    NOT NULL
 )
 ```
 
@@ -57,4 +59,18 @@ VALUES (UUID(), 0, 0, 0);
 ```hsqldb
 INSERT INTO TestSession (login_id, statistic_id)
 VALUES (1, 1);
+```
+
+https://chart-studio.plotly.com/create/#/
+
+```hsqldb
+SELECT U.LOGIN,
+       AVG(ST.CHAR_MINUTE)                           as "chars/min",
+       AVG(ST.CHAR_MINUTE) - AVG(ST.INCORRECT_CHARS) as "avg correct",
+       S.time
+FROM TESTSESSION S
+         INNER JOIN TESTUSERS U on U.ID = S.LOGIN_ID
+         INNER JOIN TESTSTATISTICS ST on ST.ID = S.STATISTIC_ID
+WHERE U.LOGIN = 'username'
+GROUP BY S.time, U.LOGIN;
 ```

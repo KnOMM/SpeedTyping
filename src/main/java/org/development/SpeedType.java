@@ -14,18 +14,22 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class SpeedType implements Runnable {
     private final Window window;
     private static Screen screen;
+    private final Connection connection;
     private String text;
     private static int columnStart;
     private static int row;
     public static int offset;
     static List<Stack<TextCharacter>> input;
-    private int length;
 
     // color codes for characters
     private static final TextColor right = TextColor.ANSI.GREEN;
@@ -39,18 +43,20 @@ public class SpeedType implements Runnable {
     private static int wordsTotal;
     private static int incorrectTotal;
 
-    SpeedType(Window window, Screen screen) {
+    SpeedType(Window window, Screen screen, Connection connection) {
         this.window = window;
+        this.connection = connection;
         SpeedType.screen = screen;
+
+    }
+
+    @Override
+    public void run() {
         columnStart = 10;
 //        int column = columnStart;
         row = 5;
         offset = 0;
         input = new ArrayList<>();
-    }
-
-    @Override
-    public void run() {
         try {
             window.setVisible(false);
             screen.clear();
@@ -243,5 +249,61 @@ public class SpeedType implements Runnable {
         screen.newTextGraphics().putString(10, 11, "Chars/minute: " + (chars / myTimeMinutes));
         screen.newTextGraphics().putString(10, 12, "Words/minute: " + (words / myTimeMinutes));
         screen.newTextGraphics().putString(10, 13, "Accuracy: " + String.format("%.2f", (1 - wrong) * 100) + "%");
+
+        int id = getLoginId(LogIn.getUsername());
+
+        if (id != 0) {
+            UUID uuid = insertStatistics(elapsedTimeMillis);
+            populateSession(id, uuid);
+        }
+    }
+
+    private UUID insertStatistics(long time) {
+        UUID uuid = UUID.randomUUID();
+        String insert = "INSERT INTO TestStatistics VALUES (?, ?, ?, ?,?,?)";
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement(insert);
+            preparedStatement.setString(1, uuid.toString());
+            preparedStatement.setInt(2, charsTotal);
+            preparedStatement.setInt(3, wordsTotal);
+            preparedStatement.setInt(4, incorrectTotal);
+            preparedStatement.setLong(5, time);
+            preparedStatement.setInt(6, (int) (charsTotal / (time / 1000.0 / 60)));
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getSQLState());
+            System.exit(-1);
+        }
+
+        return uuid;
+    }
+
+    private void populateSession(int id, UUID uuid) {
+        String insert = "INSERT INTO TestSession (login_id, statistic_id) VALUES (?, ?)";
+
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement(insert);
+            preparedStatement.setInt(1, id);
+            preparedStatement.setString(2, uuid.toString());
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private int getLoginId(String username) {
+        String select = "SELECT id FROM TestUsers WHERE login = ?";
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement(select);
+            preparedStatement.setString(1, username);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                return resultSet.getInt("id");
+            }
+            return 0;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

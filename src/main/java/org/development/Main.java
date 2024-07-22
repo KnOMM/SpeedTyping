@@ -1,9 +1,6 @@
 package org.development;
 
-import com.googlecode.lanterna.*;
 import com.googlecode.lanterna.gui2.*;
-import com.googlecode.lanterna.input.KeyStroke;
-import com.googlecode.lanterna.input.KeyType;
 import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import org.development.gui.Background;
@@ -12,8 +9,6 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 public class Main {
     static MultiWindowTextGUI gui;
@@ -65,14 +60,15 @@ public class Main {
             throw new RuntimeException(e);
         }
         LogIn login = new LogIn(window, screen, connection);
-        LogOut logOut = new LogOut(window, screen, connection);
+        LogOut logOut = new LogOut(window);
 
         Panel menu = new Panel(new LinearLayout(Direction.VERTICAL));
         menu.addComponent(new Label("test label"));
         menu.addComponent(new Label("test label2"));
         menu.addComponent(new Button("Log In", login));
+        menu.addComponent(new Button("type test", new SpeedType(window, screen, connection)));
+        menu.addComponent(new Button("Statistics",new Statistics(window, screen, connection)));
         menu.addComponent(new Button("Log Out", logOut));
-        menu.addComponent(new Button("type test", new SpeedType(window, screen)));
         menu.addComponent(new Button("Exit", () -> {
             window.close();
             ((AsynchronousTextGUIThread) guiThread).stop();

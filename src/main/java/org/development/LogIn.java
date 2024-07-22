@@ -112,4 +112,8 @@ public class LogIn implements Runnable {
     public static String getUsername() {
         return username;
     }
+
+    public static void logout() {
+        username = null;
+    }
 }

@@ -8,18 +8,18 @@ import java.sql.Connection;
 
 public class LogOut implements Runnable{
     private final Window window;
-    private final Screen screen;
-    private final Connection connection;
 
-    LogOut(Window window, Screen screen, Connection connection) {
+    LogOut(Window window) {
         this.window = window;
-        this.screen = screen;
-        this.connection = connection;
     }
     @Override
     public void run() {
        if (LogIn.getUsername() == null) {
            MessageDialog.showMessageDialog(window.getTextGUI(), "Error", "You must login first!!!");
+       }
+       else {
+            LogIn.logout();
+            MessageDialog.showMessageDialog(window.getTextGUI(), "Success", "Logged out successfully!");
        }
     }
 }
