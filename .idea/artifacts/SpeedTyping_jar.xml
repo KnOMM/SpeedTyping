@@ -5,6 +5,7 @@
       <element id="module-output" name="SpeedTyping" />
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/googlecode/lanterna/lanterna/3.1.2/lanterna-3.1.2.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/hsqldb/hsqldb/2.7.2/hsqldb-2.7.2.jar" path-in-jar="/" />
+      <element id="dir-copy" path="$PROJECT_DIR$/src/main/resources/database" />
     </root>
   </artifact>
 </component>

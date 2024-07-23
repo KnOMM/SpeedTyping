@@ -16,8 +16,7 @@ public class ScreenUpdate implements Runnable {
         isOn = true;
     }
 
-//    ScreenUpdate
-
+    // method to update the background when typing
     @Override
     public void run() {
         try {

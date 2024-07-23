@@ -34,31 +34,41 @@ public class LogIn implements Runnable {
             // Create a new GUI for the secondary window
             MultiWindowTextGUI secondaryGui = new MultiWindowTextGUI(screen);
 
-
             Panel contentPanel = new Panel(new GridLayout(2));
-
             GridLayout gridLayout = (GridLayout) contentPanel.getLayoutManager();
             gridLayout.setVerticalSpacing(1);
             contentPanel.setLayoutManager(gridLayout);
 
             Label title = new Label("Type your login twice to login/register");
             title.setLayoutData(GridLayout.createLayoutData(
-                    GridLayout.Alignment.CENTER, // Horizontal alignment in the grid cell if the cell is larger than the component's preferred size
-                    GridLayout.Alignment.CENTER, // Vertical alignment in the grid cell if the cell is larger than the component's preferred size
-                    true,       // Give the component extra horizontal space if available
-                    false,        // Give the component extra vertical space if available
-                    2,                  // Horizontal span
-                    1));                  // Vertical span
-            contentPanel.addComponent(title);
+                            GridLayout.Alignment.CENTER, // Horizontal alignment in the grid cell if the cell is larger than the component's preferred size
+                            GridLayout.Alignment.CENTER, // Vertical alignment in the grid cell if the cell is larger than the component's preferred size
+                            true,        // Give the component extra horizontal space if available
+                            false,        // Give the component extra vertical space if available
+                            2,                  // Horizontal span
+                            1)
+                    )
+                    .addTo(contentPanel);                  // Vertical span
 
             final TextBox login1 = (new TextBox().setValidationPattern(Pattern.compile(".{1,14}")).setPreferredSize(new TerminalSize(15, 1)).setLayoutData(GridLayout.createLayoutData(GridLayout.Alignment.BEGINNING, GridLayout.Alignment.CENTER)));
-            contentPanel.addComponent(new Label("Login: ").setLayoutData(GridLayout.createLayoutData(GridLayout.Alignment.BEGINNING, GridLayout.Alignment.CENTER)));
+            contentPanel
+                    .addComponent(new Label("Login: ")
+                            .setLayoutData(GridLayout.createLayoutData(
+                                    GridLayout.Alignment.BEGINNING,
+                                    GridLayout.Alignment.CENTER)
+                            ));
             contentPanel.addComponent(login1);
 
             final TextBox login2 = (new TextBox().setValidationPattern(Pattern.compile(".{1,14}")).setPreferredSize(new TerminalSize(15, 1)).setLayoutData(GridLayout.createLayoutData(GridLayout.Alignment.BEGINNING, GridLayout.Alignment.CENTER)));
-            contentPanel.addComponent(new Label("Login Again: ").setLayoutData(GridLayout.createLayoutData(GridLayout.Alignment.BEGINNING, GridLayout.Alignment.CENTER)));
+            contentPanel
+                    .addComponent(new Label("Login Again: ")
+                            .setLayoutData(GridLayout.createLayoutData(
+                                    GridLayout.Alignment.BEGINNING,
+                                    GridLayout.Alignment.CENTER)
+                            ));
             contentPanel.addComponent(login2);
 
+            // Validation
             contentPanel.addComponent(new Button("Submit", () -> {
                 if (login1.getText().isBlank() || login2.getText().isBlank()) {
                     MessageDialog.showMessageDialog(secondaryGui, "Error", "Login cannot be blank!!!");
@@ -69,7 +79,7 @@ public class LogIn implements Runnable {
                     PreparedStatement preparedStatement;
                     try {
                         preparedStatement = connection.prepareStatement("SELECT login FROM TestUsers WHERE login = ?");
-                        preparedStatement.setString (1, login1.getText());
+                        preparedStatement.setString(1, login1.getText());
                         resultSet = preparedStatement.executeQuery();
                         String login = "";
 
@@ -99,7 +109,6 @@ public class LogIn implements Runnable {
             }
             ).setLayoutData(GridLayout.createLayoutData(GridLayout.Alignment.FILL, GridLayout.Alignment.CENTER)));
             contentPanel.addComponent(new Button("Exit", secondaryWindow::close).setLayoutData(GridLayout.createLayoutData(GridLayout.Alignment.FILL, GridLayout.Alignment.CENTER)));
-
 
             secondaryWindow.setComponent(contentPanel);
             secondaryGui.addWindowAndWait(secondaryWindow);

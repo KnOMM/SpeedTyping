@@ -11,6 +11,8 @@ import com.googlecode.lanterna.screen.Screen;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -53,7 +55,6 @@ public class SpeedType implements Runnable {
     @Override
     public void run() {
         columnStart = 10;
-//        int column = columnStart;
         row = 5;
         offset = 0;
         input = new ArrayList<>();
@@ -63,16 +64,23 @@ public class SpeedType implements Runnable {
 
             input.add(new Stack<>());
 
-            // TODO clear this
             text = "";
-            Path textFile = Paths.get("text.txt");
-            System.out.println(Paths.get("text.txt").toAbsolutePath());
-            try (BufferedReader br = Files.newBufferedReader(textFile)) {
+            String resourcePath = "/text.txt";
+
+            // Read the file from the classpath
+            try (InputStream inputStream = SpeedType.class.getResourceAsStream(resourcePath);
+                 BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
+
                 int c;
                 while ((c = br.read()) != -1) {
-                    text += (char) c;
+                    text += ((char) c);
                 }
+//                System.out.println(text.toString());
+
+            } catch (IOException e) {
+                e.printStackTrace();
             }
+
             String[] lines = text.trim().split("\n");
             List<String> linesList = Arrays.asList(lines);
             Collections.shuffle(linesList);
@@ -82,15 +90,12 @@ public class SpeedType implements Runnable {
             ScreenUpdate screenUpdate = new ScreenUpdate(screen, lines);
             Thread screenUpdateThread = new Thread(screenUpdate);
             screenUpdateThread.start();
-            // draw lines
-//            drawLines(offset, lines);
 
-//            screen.setCursorPosition(new TerminalPosition(column, 0));
+            screen.setCursorPosition(new TerminalPosition(columnStart, row));
             screen.refresh();
             System.out.println(Arrays.toString(lines));
 
             long timeStart = System.currentTimeMillis();
-
 
             // current stack
             Stack<TextCharacter> stackLine = input.get(offset);
@@ -161,7 +166,6 @@ public class SpeedType implements Runnable {
     }
 
     public static void countStatistics() {
-
         int words = 0;
         int chars = 0;
         int incorrect = 0;
@@ -173,12 +177,11 @@ public class SpeedType implements Runnable {
                 if (lineList.get(j).getBackgroundColor() == wrong) {
                     incorrect++;
                 }
-                line += lineList.get(j).getCharacterString();
+                line += lineList.get(j).getCharacter();
             }
             // split if blank, ",", ".", "<", or "("
             words += line.split("\\s|,|\\.|<|\\(").length;
         }
-
         charsTotal = chars;
         wordsTotal = words;
         incorrectTotal = incorrect;
