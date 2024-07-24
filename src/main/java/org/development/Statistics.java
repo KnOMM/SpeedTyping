@@ -10,6 +10,7 @@ import com.googlecode.lanterna.gui2.Window;
 import com.googlecode.lanterna.gui2.dialogs.MessageDialog;
 import com.googlecode.lanterna.screen.Screen;
 
+import java.io.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -75,6 +76,41 @@ public class Statistics implements Runnable {
 
     }
 
+    private void download() {
+        String select = """
+                SELECT
+                       AVG(ST.CHAR_MINUTE)                           as "chars/min",
+                       AVG(ST.CHAR_MINUTE) - AVG(ST.INCORRECT_CHARS) as "correct",
+                       SUM(ST.TOTAL_WORDS)                           as "total words",
+                       S.DATE
+                FROM TESTSESSION S
+                         INNER JOIN TESTUSERS U on S.LOGIN_ID = U.ID
+                         INNER JOIN TESTSTATISTICS ST on S.STATISTIC_ID = ST.ID
+                WHERE U.LOGIN = ?
+                GROUP BY S.DATE;
+                                """;
+
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement(select);
+            preparedStatement.setString(1, LogIn.getUsername());
+            ResultSet rs = preparedStatement.executeQuery();
+            try (BufferedWriter bw = new BufferedWriter(new FileWriter("statistics.csv"))) {
+
+                bw.write("chars/minute,correct,total words,date\n");
+                while (rs.next()) {
+                    bw.write(rs.getInt(1) + "," + rs.getInt(2) + "," + rs.getInt(3) + "," + rs.getString(4) + "\n");
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            ;
+        } catch (SQLException e) {
+            System.out.println(e.getSQLState());
+            System.exit(-1);
+        }
+
+    }
+
     @Override
     public void run() {
         if (LogIn.getUsername() == null) {
@@ -132,7 +168,12 @@ public class Statistics implements Runnable {
                     .addTo(mainPanel);
 
             // TODO
-            new Button("Download", statsWindow::close)
+            new Button("Download", () -> {
+
+
+                download();
+                MessageDialog.showMessageDialog(statsWindow.getTextGUI(), "Info", "CSV file downloaded successfully.\nGo to the root of the app.");
+            })
                     .setLayoutData(GridLayout.createLayoutData(GridLayout.Alignment.FILL, GridLayout.Alignment.END))
                     .addTo(mainPanel);
 

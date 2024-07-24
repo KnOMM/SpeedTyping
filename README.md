@@ -1,5 +1,107 @@
 # SpeedTyping
 
+---
+
+# Typing Test Application
+
+A console-based typing test application that provides statistics on your typing speed and accuracy. It uses a random selection of text lines for the typing test and stores the results in a database for later retrieval and analysis.
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Features](#features)
+3. [Installation](#installation)
+4. [Usage](#usage)
+5. [Contributing](#contributing)
+6. [License](#license)
+
+## Overview
+
+The Typing Test Application is a Java-based console application that allows users to test their typing speed and accuracy. Users can log in, complete typing tests, and view their statistics over time. The application stores user data and test statistics in a SQL database, providing insights into performance trends.
+
+## Features
+
+- **Typing Test**: Measure typing speed and accuracy with random text lines.
+- **Statistics Tracking**: Track words per minute, characters per minute, and typing accuracy.
+- **User Authentication**: Log in to view personalized statistics.
+- **Data Storage**: Stores test results in a SQL database.
+- **CSV Export**: Export statistics to a CSV file for offline analysis.
+
+## Installation
+
+### Prerequisites
+
+- Java Development Kit (JDK) 8 or higher
+- Apache Maven
+- SQL Database (e.g., MySQL, PostgreSQL)
+- Terminal emulator (e.g., [iTerm2](https://iterm2.com/), [Windows Terminal](https://github.com/microsoft/terminal))
+
+### Steps
+
+1. **Clone the Repository**
+
+   ```bash
+   git clone https://github.com/yourusername/typing-test-application.git
+   cd typing-test-application
+   ```
+
+2. **Configure the Database**
+
+    - Create a new database and execute the SQL scripts located in the `db` folder to set up the necessary tables.
+    - Update the database connection settings in the application.
+
+3. **Build the Project**
+
+   ```bash
+   mvn clean install
+   ```
+
+4. **Run the Application**
+
+   ```bash
+   java -jar target/typing-test-application.jar
+   ```
+
+## Usage
+
+1. **Start the Application**
+
+   Launch the application from your terminal using the command provided above.
+
+2. **Log In**
+
+   Enter your username to log in to the system.
+
+3. **Begin Typing Test**
+
+   Follow the on-screen instructions to complete the typing test.
+
+4. **View Statistics**
+
+   After completing the test, view your statistics on typing speed and accuracy.
+
+5. **Download CSV**
+
+   Export your statistics to a CSV file for further analysis.
+
+## Contributing
+
+Contributions are welcome! To contribute, please follow these steps:
+
+1. Fork the repository.
+2. Create a new branch (`git checkout -b feature/YourFeature`).
+3. Commit your changes (`git commit -m 'Add some feature'`).
+4. Push to the branch (`git push origin feature/YourFeature`).
+5. Open a pull request.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+---
+
+Feel free to modify the above template as needed to fit your project's specific needs and details, such as adding information about any additional dependencies or configuration steps.
+
 ```commandline
 javac -cp /home/knomm/Downloads/lanterna-3.0.1.jar -d out src/main/java/org/development/Main.java
 java -cp /home/knomm/Downloads/lanterna-3.0.1.jar:out org.development.Main
